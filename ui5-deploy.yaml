@@ -15,13 +15,13 @@ builder:
       configuration:
         ignoreCertError: true
         target:
-          url: https://milhouse.mibcon.cz:8443/
+          url: <% URL %>
           client: "100"
         credentials:
           username: env:USER
           password: env:PW
         app:
-          name: ZHR_DAMIENCICD
+          name: <% BSPNAME %>
           description: null
-          package: ZHR_CICD
-          transport: NGWK900174
+          package: <% PACKAGE %>
+          transport: <% TP %>
