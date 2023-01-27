@@ -1,0 +1,62 @@
+stages:
+  - build:merge
+  - version
+  - deploy:tags
+
+.mib:runners:
+  tags:
+    - mibcon
+
+.base:rules:version:
+  extends: .mib:runners
+  rules:
+    - if: $CI_COMMIT_TITLE =~ /^Merge/ && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: always
+    - when: never
+
+.base:rules:merge:
+  extends: .mib:runners
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: always
+    - when: never
+
+.base:rules:tags:
+  extends: .mib:runners
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: always
+    - when: never
+
+cache:
+  paths:
+    - ./node_modules
+
+build:merge:
+  image: node:14-alpine
+  extends: .base:rules:merge
+  stage: build:merge
+  allow_failure: false
+  before_script:
+    - npm install
+  script:
+    - npm run build
+
+semantic:release:version:
+  image: node:19-buster-slim
+  extends: .base:rules:version
+  stage: version
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git-core ca-certificates
+    - npm install -g semantic-release @semantic-release/gitlab @semantic-release/changelog conventional-changelog-conventionalcommits @semantic-release/commit-analyzer @semantic-release/git
+  script:
+    - semantic-release
+
+deploy:tags:
+  image: node:14-alpine
+  extends: .base:rules:tags
+  stage: deploy:tags
+  before_script:
+    - npm install
+  script:
+    - echo "y" | npm run deploy
